@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>auth admin · rndexp.art</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 980px; margin: 32px auto; padding: 0 16px;
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(127,127,127,.18); vertical-align: top; }
+    th { font-weight: 600; color: #6b7280; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(127,127,127,.15); margin: 0 4px 4px 0; font-size: 11px; }
+    form.inline { display:inline-flex; gap:6px; align-items:center; margin-right:6px; }
+    input, select, button {
+      font: inherit; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(127,127,127,.35);
+      background: rgba(255,255,255,.04);
+    }
+    button { cursor: pointer; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; }
+    .you { font-size: 12px; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>auth admin</h1>
+      <p class="muted">Manage users, roles and permissions for the rndexp.art ecosystem.</p>
+    </div>
+    <div class="you">
+      Signed in as <strong>{{ me.email }}</strong>
+      &nbsp;·&nbsp;
+      <form action="/logout" method="post" style="display:inline">
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </div>
+
+  <h2>Users</h2>
+  <table>
+    <thead><tr><th>Email</th><th>Name</th><th>Roles</th><th>Last login</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.email }}</td>
+        <td>{{ u.name }}</td>
+        <td>
+          {% for r in u.role_slugs() %}<span class="pill">{{ r }}</span>{% endfor %}
+        </td>
+        <td>{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>
+          <form class="inline" method="post" action="/admin/users/{{ u.id }}/roles">
+            <select name="role_slug">
+              {% for r in roles %}<option value="{{ r.slug }}">{{ r.slug }}</option>{% endfor %}
+            </select>
+            <button type="submit">Grant</button>
+          </form>
+          {% for r in u.role_slugs() %}
+            <form class="inline" method="post" action="/admin/users/{{ u.id }}/roles/{{ r }}/revoke">
+              <button type="submit">Revoke {{ r }}</button>
+            </form>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Roles</h2>
+  <table>
+    <thead><tr><th>Slug</th><th>Description</th><th>Permissions</th><th>Add permission</th></tr></thead>
+    <tbody>
+      {% for r in roles %}
+      <tr>
+        <td><code>{{ r.slug }}</code></td>
+        <td>{{ r.description }}</td>
+        <td>{% for p in r.permissions %}<span class="pill">{{ p.slug }}</span>{% endfor %}</td>
+        <td>
+          <form class="inline" method="post" action="/admin/roles/{{ r.slug }}/permissions">
+            <select name="permission_slug">
+              {% for p in permissions %}<option value="{{ p.slug }}">{{ p.slug }}</option>{% endfor %}
+            </select>
+            <button type="submit">Attach</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <form method="post" action="/admin/roles" style="margin-top:14px">
+    <input name="slug" placeholder="new-role-slug" required>
+    <input name="description" placeholder="optional description" size="40">
+    <button type="submit">Create role</button>
+  </form>
+
+  <h2>Permissions</h2>
+  <table>
+    <thead><tr><th>Slug</th><th>Description</th></tr></thead>
+    <tbody>
+      {% for p in permissions %}
+      <tr><td><code>{{ p.slug }}</code></td><td>{{ p.description }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <form method="post" action="/admin/permissions" style="margin-top:14px">
+    <input name="slug" placeholder="namespace.action" required>
+    <input name="description" placeholder="optional description" size="40">
+    <button type="submit">Create permission</button>
+  </form>
+</body>
+</html>

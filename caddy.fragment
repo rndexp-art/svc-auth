@@ -1,0 +1,41 @@
+# auth.rndexp.art — identity service for the rndexp.art ecosystem.
+#
+# `tools/rndexp render --env local` rewrites `.rndexp.art` → `.rndexp.localhost`
+# so dev gets HTTPS via Caddy's internal CA.
+#
+# The service derives its own external base URL and cookie domain from the
+# inbound Host header, so we just need a vanilla reverse_proxy here.
+
+(rndexp_auth_forward) {
+	# Snippet other services can `import` to gate themselves behind a valid
+	# rndexp_auth cookie. Usage:
+	#
+	#   private.rndexp.art {
+	#     import rndexp_auth_forward
+	#     reverse_proxy private:8080
+	#   }
+	#
+	# `forward_auth` makes a sub-request to /verify; on 200 the original
+	# request continues with X-Auth-* headers populated. On 401 we 302 the
+	# user to the auth login page.
+	#
+	# We encode the post-login destination in a short-lived cookie scoped to
+	# `.rndexp.art` instead of in a `?target=` query param. Caddy has no
+	# URL-encoding placeholder, and stuffing a URL with its own query string
+	# into another URL's query string corrupts the value. The cookie path
+	# sidesteps the encoding problem entirely.
+	forward_auth auth:8001 {
+		uri /verify
+		copy_headers X-Auth-Email X-Auth-Sub X-Auth-Roles X-Auth-Permissions
+		@unauth status 401
+		handle_response @unauth {
+			header Set-Cookie "rndexp_target={http.request.scheme}://{http.request.host}{http.request.uri}; Domain=.rndexp.art; Path=/; Max-Age=600; SameSite=Lax; Secure"
+			redir https://auth.rndexp.art/ 302
+		}
+	}
+}
+
+auth.rndexp.art {
+	encode zstd gzip
+	reverse_proxy auth:8001
+}

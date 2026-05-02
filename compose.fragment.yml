@@ -1,0 +1,35 @@
+# Auth service compose fragment. Included by the gateway's
+# docker-compose.generated.yml when `auth` is enabled in config/services.yml.
+#
+# Caddy reverse-proxies to `auth:8001` over the project's default docker
+# network — no public port bindings here.
+
+services:
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    image: rndexpart/auth:local
+    restart: unless-stopped
+    expose:
+      - "8001"
+    environment:
+      AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID}
+      AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+      AUTH_INITIAL_ADMIN_EMAIL: ${AUTH_INITIAL_ADMIN_EMAIL:-}
+      AUTH_DB_PATH: /data/auth.db
+      # Allowed cookie-domain suffixes (comma-separated). Anything else falls
+      # back to host-only cookies. Keeps cookie scope explicit.
+      AUTH_ALLOWED_DOMAINS: rndexp.art,rndexp.localhost
+    volumes:
+      - auth_data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=2).status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  auth_data:

@@ -1,0 +1,19 @@
+[project]
+name = "rndexpart-auth"
+version = "0.1.0"
+description = "Identity / Google OAuth / roles+permissions for rndexp.art"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "authlib>=1.3.2",
+  "httpx>=0.27",
+  "sqlalchemy>=2.0",
+  "pyjwt>=2.9",
+  "jinja2>=3.1",
+  "itsdangerous>=2.2",
+  "python-multipart>=0.0.12",
+]
+
+[tool.uv]
+package = false
