@@ -8,9 +8,10 @@ A small FastAPI app that owns identity for the whole `rndexp.art` ecosystem.
 
 - Public hostname: `auth.rndexp.art` (production), `auth.rndexp.localhost` (dev).
 - Internal port: **8001**.
-- Renders a login page with a "Sign in with Google" button.
-- After successful Google OAuth, sets a cookie scoped to **`.rndexp.art`** (or `.rndexp.localhost` for dev) so every subdomain can read it, then redirects to the `target=` URL passed when the login page was opened.
-- Owns a small SQLite database of users / roles / permissions.
+- Login page offers two paths: **Sign in with Google** and **email + password**. The same account can use either or both — Google sub and password hash live on the same row in `users`.
+- After successful login, sets a cookie scoped to **`.rndexp.art`** (or `.rndexp.localhost` for dev) so every subdomain can read it, then redirects to the `target=` URL passed when the login page was opened.
+- Owns a small SQLite database of users / roles / permissions, plus one-time `invite_tokens` and `password_reset_tokens` (sha256-hashed before storage; plaintext only ever exists in the URL emailed to the user).
+- Exposes a JSON CRUD API under `/api/users` that the dashboard calls (cookie-forwarded admin session). The HTML `/admin` page is the legacy interface — both work and share the same DB.
 
 ## How other services use it
 
@@ -35,6 +36,28 @@ Two integration patterns:
 | `AUTH_GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 client secret |
 | `AUTH_JWT_SECRET` | 32+ byte random string used to sign session cookies |
 | `AUTH_INITIAL_ADMIN_EMAIL` | This email gets the `admin` role on first login (bootstraps the system) |
+| `AUTH_SMTP_*` (optional) | SMTP host/port/user/password/from for invite + reset emails. **If unset**, those flows still issue tokens but log the URL to stderr; the dashboard's admin UI surfaces the link so an operator can copy it manually. See `.env.example`. |
+
+## Routes
+
+| Path | Method | Purpose |
+|---|---|---|
+| `/` | GET | Login page (Google button + password form). |
+| `/login` | POST | Password sign-in. |
+| `/auth/google/start` / `/auth/google/callback` | GET | Google OAuth round trip. |
+| `/forgot-password` | GET, POST | Request a reset email; always 200 to avoid account-existence enumeration. |
+| `/reset-password/{token}` | GET, POST | Consume a one-time reset token, set a new password, sign in. |
+| `/invite/{token}` | GET, POST | Consume a one-time invite token, set a password, sign in. |
+| `/me` | GET | Current user JSON. |
+| `/verify` | GET | Caddy `forward_auth` probe — 200 with X-Auth-* on valid cookie, 401 otherwise. |
+| `/logout` | POST | Clear the cookie. |
+| `/admin` | GET | Legacy HTML admin UI. |
+| `/api/users` | GET, POST `/invite` | List users; create an invite. |
+| `/api/users/{id}` | DELETE | Remove a user (rejects last-admin). |
+| `/api/users/{id}/reset-password` | POST | Admin-triggered reset. |
+| `/api/users/{id}/roles` | POST | Grant a role. |
+| `/api/users/{id}/roles/{slug}` | DELETE | Revoke a role (rejects revoking the last admin's `admin`). |
+| `/api/roles` | GET | Role slug list (used by the dashboard's role-picker). |
 
 The service derives its own external URL and cookie domain from the inbound `Host` header at request time, so there is no `AUTH_BASE_URL` knob to keep in sync.
 

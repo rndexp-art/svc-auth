@@ -29,7 +29,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import db, google, security
+from . import db, google, routes_api, routes_password, security
 from .config import settings
 
 
@@ -102,6 +102,15 @@ def _clear_session_cookie(response: Response, request: Request) -> None:
     )
 
 
+# Wire the password / invite / reset router and the JSON CRUD router. Both
+# need access to the same Templates instance and cookie helpers, so we hand
+# them in here rather than letting them re-derive the logic.
+routes_password.init(templates)
+routes_password.configure_cookies(set_cookie=_set_session_cookie, clear_cookie=_clear_session_cookie)
+app.include_router(routes_password.router)
+app.include_router(routes_api.router)
+
+
 # --- public routes ----------------------------------------------------------
 
 @app.get("/healthz")
@@ -139,6 +148,8 @@ def login_page(request: Request, target: str = ""):
             "target": safe_target,
             "start_url": start_url,
             "google_configured": settings().google_configured(),
+            "error": None,
+            "email": "",
         },
     )
 

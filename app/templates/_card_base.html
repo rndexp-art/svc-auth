@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}rndexp.art{% endblock %}</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      display: grid; place-items: center;
+      background: #fafafa; color: #111;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e0e10; color: #f2f2f2; }
+      .card { background: #18181b; border-color: #27272a; }
+      .muted { color: #a1a1aa; }
+      input { background: #0e0e10; color: #f2f2f2; border-color: #27272a; }
+      .btn-primary { background: #fff; color: #1f1f1f; border-color: #fff; }
+      .btn-primary:hover { background: #f1f1f1; }
+    }
+    .card {
+      width: min(420px, calc(100vw - 32px));
+      padding: 32px 28px;
+      border: 1px solid #e4e4e7; background: #fff;
+      border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.06);
+    }
+    h1 { font-size: 19px; margin: 0 0 6px; font-weight: 600; }
+    .muted { color: #6b7280; font-size: 13px; margin: 0 0 18px; }
+    form { display: grid; gap: 10px; }
+    label { font-size: 12px; color: #6b7280; }
+    input {
+      width: 100%; padding: 10px 12px; border-radius: 8px;
+      border: 1px solid #d4d4d8; font: inherit; background: #fff;
+    }
+    .btn-primary {
+      padding: 12px 16px; border-radius: 9px; border: 1px solid #1f1f1f;
+      background: #1f1f1f; color: #fff; font: inherit; font-weight: 500;
+      cursor: pointer; margin-top: 4px;
+    }
+    .btn-primary:hover { background: #353535; }
+    .err { color: #b91c1c; font-size: 13px; margin: 0; }
+    a { color: inherit; }
+    .footer { font-size: 12px; color: #6b7280; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

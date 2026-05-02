@@ -1,0 +1,23 @@
+{% extends "_card_base.html" %}
+{% block title %}Link expired · rndexp.art{% endblock %}
+{% block content %}
+<h1>This link is no longer valid</h1>
+<p class="muted">
+  {% if kind == "invite" %}
+    Invite links expire after 7 days, or once they've been used. Ask an administrator
+    to send a fresh invite.
+  {% else %}
+    Reset links expire after 30 minutes, or once they've been used. You can
+    request a new one if you still need to change your password.
+  {% endif %}
+</p>
+<p class="footer">
+  {% if kind == "invite" %}
+    <a href="/">Back to sign in</a>
+  {% else %}
+    <a href="/forgot-password">Request a new reset link</a>
+    &nbsp;·&nbsp;
+    <a href="/">Back to sign in</a>
+  {% endif %}
+</p>
+{% endblock %}
