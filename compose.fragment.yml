@@ -7,7 +7,9 @@
 services:
   auth:
     build:
-      context: ./services/auth
+      # Compose `include:` resolves relative paths in this fragment from the
+      # fragment's own directory — so the build context is this directory.
+      context: .
       dockerfile: Dockerfile
     image: rndexpart/auth:local
     restart: unless-stopped
