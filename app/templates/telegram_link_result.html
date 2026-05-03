@@ -1,0 +1,18 @@
+{% extends "_card_base.html" %}
+{% block title %}Link Telegram · rndexp.art{% endblock %}
+{% block content %}
+{% if ok %}
+  <h1>Telegram linked</h1>
+  <p class="muted">
+    Your Telegram account
+    {% if username %}<strong>@{{ username }}</strong>{% elif first_name %}<strong>{{ first_name }}</strong>{% endif %}
+    is now bound to <strong>{{ email }}</strong>.
+  </p>
+  <p class="muted">Future messages you send to the bot will be associated with your rndexp.art account automatically.</p>
+{% else %}
+  <h1>Couldn't link Telegram</h1>
+  <p class="err">{{ error }}</p>
+  <p class="footer">If your link expired, send <code>/start</code> to the bot again to get a fresh one.</p>
+{% endif %}
+<p class="footer"><a href="/me">Back to your account</a></p>
+{% endblock %}

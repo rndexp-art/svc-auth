@@ -29,7 +29,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import db, google, routes_api, routes_password, security
+from . import db, google, routes_api, routes_password, routes_telegram, security
 from .config import settings
 
 
@@ -107,8 +107,10 @@ def _clear_session_cookie(response: Response, request: Request) -> None:
 # them in here rather than letting them re-derive the logic.
 routes_password.init(templates)
 routes_password.configure_cookies(set_cookie=_set_session_cookie, clear_cookie=_clear_session_cookie)
+routes_telegram.init(templates)
 app.include_router(routes_password.router)
 app.include_router(routes_api.router)
+app.include_router(routes_telegram.router)
 
 
 # --- public routes ----------------------------------------------------------

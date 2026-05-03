@@ -24,6 +24,10 @@ services:
       # Allowed cookie-domain suffixes (comma-separated). Anything else falls
       # back to host-only cookies. Keeps cookie scope explicit.
       AUTH_ALLOWED_DOMAINS: rndexp.art,rndexp.localhost
+      # Shared secret for the bot ↔ auth internal API. Set when telegram-bot
+      # is enabled; defaults to empty (link route will 503 until configured).
+      AUTH_INTERNAL_TOKEN: ${AUTH_INTERNAL_TOKEN:-}
+      TELEGRAM_BOT_INTERNAL_URL: ${TELEGRAM_BOT_INTERNAL_URL:-http://telegram-bot:8004}
     volumes:
       - auth_data:/data
     healthcheck:
