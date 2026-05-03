@@ -59,6 +59,7 @@ class UserOut(BaseModel):
     picture_url: str
     has_password: bool
     has_google: bool
+    has_telegram: bool
     roles: list[str]
     permissions: list[str]
     created_at: datetime
@@ -90,6 +91,7 @@ def _user_to_out(u: db.User) -> UserOut:
         picture_url=u.picture_url,
         has_password=u.has_password(),
         has_google=u.has_google(),
+        has_telegram=u.has_telegram(),
         roles=u.role_slugs(),
         permissions=u.permission_slugs(),
         created_at=u.created_at,

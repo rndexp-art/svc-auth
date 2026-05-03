@@ -83,6 +83,10 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255), default="")
     picture_url: Mapped[str] = mapped_column(String(1024), default="")
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    # telegram_id is set when a user links their Telegram identity through the
+    # bot. NULL = not linked. Globally unique when set (one Telegram account
+    # binds to at most one rndexp.art account at a time).
+    telegram_id: Mapped[int | None] = mapped_column(nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     last_login_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
@@ -94,6 +98,13 @@ class User(Base):
             "google_sub",
             unique=True,
             sqlite_where=text("google_sub != ''"),
+        ),
+        # Partial unique index — only enforces uniqueness for actual links.
+        Index(
+            "ix_users_telegram_id_nonnull",
+            "telegram_id",
+            unique=True,
+            sqlite_where=text("telegram_id IS NOT NULL"),
         ),
     )
 
@@ -112,6 +123,9 @@ class User(Base):
 
     def has_google(self) -> bool:
         return bool(self.google_sub)
+
+    def has_telegram(self) -> bool:
+        return self.telegram_id is not None
 
 
 class Role(Base):
@@ -199,6 +213,7 @@ def init_engine(db_path: str | None = None) -> None:
     _Session = sessionmaker(bind=_engine, expire_on_commit=False, future=True)
     Base.metadata.create_all(_engine)
     _migrate_v1_to_v2()
+    _migrate_v2_to_v3()
     _seed_defaults()
 
 
@@ -269,6 +284,25 @@ def _migrate_v1_to_v2() -> None:
         else:
             # No legacy UNIQUE — just need the new column.
             conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)"))
+
+
+def _migrate_v2_to_v3() -> None:
+    """v3 adds users.telegram_id (NULL by default) + a partial UNIQUE index
+    on it. `Base.metadata.create_all` already created the index for fresh
+    DBs; this fills the gap for v2-shaped DBs upgraded in place."""
+    assert _engine is not None
+    insp = inspect(_engine)
+    if "users" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("users")}
+    if "telegram_id" in cols:
+        return
+    with _engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN telegram_id INTEGER"))
+        conn.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_telegram_id_nonnull "
+            "ON users(telegram_id) WHERE telegram_id IS NOT NULL"
+        ))
 
 
 # --- seed data --------------------------------------------------------------
